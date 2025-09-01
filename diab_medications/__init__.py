@@ -1,0 +1,1 @@
+default_app_config = 'diab_medications.apps.DiabMedicationsConfig'
