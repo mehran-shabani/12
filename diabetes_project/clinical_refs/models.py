@@ -16,6 +16,13 @@ class ClinicalReference(models.Model):
     class Meta:
         db_table = 'clinical_references'
         ordering = ['topic', 'title']
+        indexes = [
+            models.Index(fields=['topic']),
+            models.Index(fields=['source']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['title', 'source'], name='uniq_ref_title_source'),
+        ]
 
     def __str__(self):
         return f"{self.title} - {self.source}"

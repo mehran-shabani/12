@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from celery import shared_task
 import openai
 from django.utils import timezone
@@ -8,6 +9,7 @@ from patients_core.models import Patient
 
 # Configure OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
+logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3)
@@ -50,7 +52,7 @@ def summarize_record(self, patient_id, resource_type, resource_id, payload):
         else:
             prompt = f"خلاصه این {resource_type}: {json.dumps(payload, ensure_ascii=False)}"
         
-        # Call OpenAI API
+        # Call OpenAI API with timeout
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
@@ -58,7 +60,8 @@ def summarize_record(self, patient_id, resource_type, resource_id, payload):
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=300
+            max_tokens=300,
+            request_timeout=20  # Add timeout
         )
         
         summary_text = response['choices'][0]['message']['content'].strip()
@@ -75,7 +78,7 @@ def summarize_record(self, patient_id, resource_type, resource_id, payload):
         
     except Exception as e:
         # Retry the task with exponential backoff
-        print(f"Error in summarize_record: {str(e)}")
+        logger.error(f"Error in summarize_record for {resource_type} {resource_id}: {str(e)}")
         raise self.retry(exc=e, countdown=10 * (self.request.retries + 1))
 
 

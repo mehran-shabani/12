@@ -188,6 +188,9 @@ AWS_QUERYSTRING_AUTH = False
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 
+# Security for export endpoint
+ADMIN_EXPORT_TOKEN = os.getenv('ADMIN_EXPORT_TOKEN', None)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

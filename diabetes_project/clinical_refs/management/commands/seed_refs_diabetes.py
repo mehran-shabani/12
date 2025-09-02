@@ -1,3 +1,4 @@
+import textwrap
 from django.core.management.base import BaseCommand
 from clinical_refs.models import ClinicalReference
 
@@ -108,17 +109,24 @@ class Command(BaseCommand):
         ]
         
         created_count = 0
+        updated_count = 0
         for ref_data in references:
-            ref, created = ClinicalReference.objects.get_or_create(
+            # Remove title from defaults and clean content
+            defaults = {k: v for k, v in ref_data.items() if k != "title"}
+            if "content" in defaults and isinstance(defaults["content"], str):
+                defaults["content"] = textwrap.dedent(defaults["content"]).strip()
+            
+            ref, created = ClinicalReference.objects.update_or_create(
                 title=ref_data["title"],
-                defaults=ref_data
+                defaults=defaults
             )
             if created:
                 created_count += 1
                 self.stdout.write(self.style.SUCCESS(f'Created: {ref.title}'))
             else:
-                self.stdout.write(self.style.WARNING(f'Already exists: {ref.title}'))
+                updated_count += 1
+                self.stdout.write(self.style.WARNING(f'Updated: {ref.title}'))
         
         self.stdout.write(self.style.SUCCESS(
-            f'\nSuccessfully created {created_count} clinical references'
+            f'\nSuccessfully created {created_count} and updated {updated_count} clinical references'
         ))

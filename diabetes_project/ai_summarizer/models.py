@@ -13,6 +13,16 @@ class AISummary(models.Model):
     class Meta:
         db_table = 'ai_summaries'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['patient', '-created_at']),
+            models.Index(fields=['resource_type', 'resource_id']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['resource_type', 'resource_id'],
+                name='unique_summary_per_resource'
+            ),
+        ]
 
     def __str__(self):
         return f"Summary of {self.resource_type} {self.resource_id}"

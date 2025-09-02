@@ -28,44 +28,52 @@
 ### نصب محلی
 
 1. Clone کردن پروژه:
+
 ```bash
 git clone <repository-url>
 cd diabetes_project
 ```
 
 2. ایجاد محیط مجازی:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
 3. نصب پکیج‌ها:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. تنظیم متغیرهای محیطی:
+
 ```bash
 cp .env.example .env
 # ویرایش .env و تنظیم مقادیر
 ```
 
 5. اجرای Migration:
+
 ```bash
 python manage.py migrate
 ```
 
 6. ایجاد Superuser (اختیاری):
+
 ```bash
 python manage.py createsuperuser
 ```
 
 7. بارگذاری Clinical References:
+
 ```bash
 python manage.py seed_refs_diabetes
 ```
 
 8. اجرای سرور:
+
 ```bash
 python manage.py runserver
 ```
@@ -80,11 +88,13 @@ docker-compose up -d
 ## استفاده از API
 
 ### Health Check
+
 ```bash
 curl http://localhost:8000/health/
 ```
 
 ### ایجاد بیمار جدید
+
 ```bash
 curl -X POST http://localhost:8000/api/patients/ \
   -H "Content-Type: application/json" \
@@ -98,11 +108,13 @@ curl -X POST http://localhost:8000/api/patients/ \
 ```
 
 ### مشاهده Timeline بیمار
+
 ```bash
 curl http://localhost:8000/api/patients/{patient_id}/timeline/
 ```
 
 ### API Documentation
+
 http://localhost:8000/api/docs/
 
 ## اجرای Celery Workers
@@ -148,6 +160,7 @@ diabetes_project/
 ⚠️ **توجه**: این پروژه بدون سیستم احراز هویت پیاده‌سازی شده و فقط برای محیط‌های توسعه و تست مناسب است.
 
 برای استفاده در محیط production:
+
 - فعال کردن احراز هویت
 - تنظیم CORS محدودتر
 - استفاده از HTTPS

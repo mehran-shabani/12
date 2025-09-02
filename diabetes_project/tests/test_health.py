@@ -15,8 +15,8 @@ class TestHealthEndpoints:
         assert data['service'] == 'diabetes-api'
     
     def test_readiness_check_success(self, mocker):
-        # Mock Redis connection
-        mocker.patch('redis.from_url').return_value.ping.return_value = True
+        # Mock Redis connection where it's used
+        mocker.patch('api.routers.redis.from_url').return_value.ping.return_value = True
         
         client = APIClient()
         response = client.get('/ready/')
