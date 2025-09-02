@@ -70,6 +70,7 @@ DATABASES = {
 }
 
 # REST Framework settings - بدون احراز هویت
+# TODO: Add authentication for production (JWT, API Keys, etc.)
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],  # 👈 بدون توکن
     'DEFAULT_PERMISSION_CLASSES': [

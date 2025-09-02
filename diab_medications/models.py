@@ -13,5 +13,12 @@ class MedicationOrder(models.Model):
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-start_date']
+        indexes = [
+            models.Index(fields=['patient', 'start_date']),
+            models.Index(fields=['drug_name', 'start_date']),
+        ]
+
     def __str__(self):
         return f"{self.drug_name} ({self.dosage}) for {self.patient.full_name}"

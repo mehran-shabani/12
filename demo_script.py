@@ -4,12 +4,17 @@ import requests
 import json
 import uuid
 import time
+import os
 
 BASE_URL = "http://localhost:8000"
+TIMEOUT = 10
 
 def main():
     print("🏥 === نمایش سیستم مدیریت بیماران دیابتی ===")
-    print("🔓 سیستم کاملاً باز - بدون نیاز به توکن یا لاگین")
+    # نمایش وضعیت امنیتی فقط در محیط توسعه
+    if os.getenv('DEBUG', 'True').lower() == 'true':
+        print("🔓 سیستم کاملاً باز - بدون نیاز به توکن یا لاگین")
+        print("⚠️  فقط برای محیط توسعه - در تولید احراز هویت اضافه کنید")
     
     # 1️⃣ ایجاد بیمار
     print("\n1️⃣ ایجاد بیمار جدید...")
@@ -17,14 +22,27 @@ def main():
         "full_name": "محمد رضایی",
         "sex": "male", 
         "dob": "1975-03-20",
-        "national_id": "0123456789",
+        "national_id": str(uuid.uuid4())[:10],  # استفاده از UUID برای یکتایی
         "primary_doctor_id": str(uuid.uuid4())
     }
     
-    response = requests.post(f"{BASE_URL}/api/patients/", json=patient_data)
-    patient = response.json()
-    patient_id = patient['id']
-    print(f"✅ بیمار ایجاد شد: {patient['full_name']} (ID: {patient_id})")
+    try:
+        response = requests.post(f"{BASE_URL}/api/patients/", json=patient_data, timeout=TIMEOUT)
+        if response.status_code != 201:
+            print(f"❌ ثبت بیمار شکست خورد: {response.status_code} -> {response.text}")
+            return
+        patient = response.json()
+        patient_id = patient.get('id')
+        if not patient_id:
+            print("❌ پاسخ سرور شناسه بیمار نداشت")
+            return
+        print(f"✅ بیمار ایجاد شد: {patient.get('full_name', '—')} (ID: {patient_id})")
+    except requests.exceptions.Timeout:
+        print("❌ درخواست ایجاد بیمار timeout شد")
+        return
+    except requests.exceptions.RequestException as e:
+        print(f"❌ خطا در ارتباط با سرور: {e}")
+        return
     
     # 2️⃣ ایجاد ویزیت
     print("\n2️⃣ ثبت ویزیت...")
@@ -50,12 +68,17 @@ def main():
         }
     }
     
-    response = requests.post(f"{BASE_URL}/api/encounters/", json=encounter_data)
-    if response.status_code == 201:
-        encounter = response.json()
-        print(f"✅ ویزیت ثبت شد (ID: {encounter['id']})")
-    else:
-        print(f"❌ خطا در ثبت ویزیت: {response.status_code}")
+    try:
+        response = requests.post(f"{BASE_URL}/api/encounters/", json=encounter_data, timeout=TIMEOUT)
+        if response.status_code == 201:
+            encounter = response.json()
+            print(f"✅ ویزیت ثبت شد (ID: {encounter['id']})")
+        else:
+            print(f"❌ خطا در ثبت ویزیت: {response.status_code} -> {response.text}")
+    except requests.exceptions.Timeout:
+        print("❌ درخواست ثبت ویزیت timeout شد")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ خطا در ارتباط با سرور: {e}")
     
     # 3️⃣ ثبت آزمایش‌ها
     print("\n3️⃣ ثبت نتایج آزمایش...")
@@ -75,9 +98,16 @@ def main():
             "taken_at": "2025-01-20T08:00:00Z"
         }
         
-        response = requests.post(f"{BASE_URL}/api/labs/", json=lab_data)
-        if response.status_code == 201:
-            print(f"✅ آزمایش {lab['test_name']}: {lab['value']} {lab['unit']}")
+        try:
+            response = requests.post(f"{BASE_URL}/api/labs/", json=lab_data, timeout=TIMEOUT)
+            if response.status_code == 201:
+                print(f"✅ آزمایش {lab['test_name']}: {lab['value']} {lab['unit']}")
+            else:
+                print(f"❌ خطا در ثبت آزمایش {lab['test_name']}: {response.status_code} -> {response.text}")
+        except requests.exceptions.Timeout:
+            print(f"❌ درخواست ثبت آزمایش {lab['test_name']} timeout شد")
+        except requests.exceptions.RequestException as e:
+            print(f"❌ خطا در ارتباط با سرور برای آزمایش {lab['test_name']}: {e}")
     
     # 4️⃣ ثبت داروها
     print("\n4️⃣ ثبت داروها...")
@@ -100,14 +130,34 @@ def main():
     
     for med in medications:
         med_data = {**med, "patient": patient_id}
-        response = requests.post(f"{BASE_URL}/api/meds/", json=med_data)
-        if response.status_code == 201:
-            print(f"✅ دارو: {med['drug_name']} {med['dosage']} {med['frequency']}")
+        try:
+            response = requests.post(f"{BASE_URL}/api/meds/", json=med_data, timeout=TIMEOUT)
+            if response.status_code == 201:
+                print(f"✅ دارو: {med['drug_name']} {med['dosage']} {med['frequency']}")
+            else:
+                print(f"❌ خطا در ثبت دارو {med['drug_name']}: {response.status_code} -> {response.text}")
+        except requests.exceptions.Timeout:
+            print(f"❌ درخواست ثبت دارو {med['drug_name']} timeout شد")
+        except requests.exceptions.RequestException as e:
+            print(f"❌ خطا در ارتباط با سرور برای دارو {med['drug_name']}: {e}")
     
     # 5️⃣ مشاهده Timeline
     print("\n5️⃣ مشاهده Timeline بیمار...")
-    response = requests.get(f"{BASE_URL}/api/patients/{patient_id}/timeline/")
-    timeline = response.json()
+    # صبر کوتاه تا خلاصه‌سازی/ورژن‌ها ثبت بشن
+    time.sleep(2)
+    
+    try:
+        response = requests.get(f"{BASE_URL}/api/patients/{patient_id}/timeline/", timeout=TIMEOUT)
+        if response.status_code != 200:
+            print(f"❌ خطا در دریافت Timeline: {response.status_code} -> {response.text}")
+            return
+        timeline = response.json()
+    except requests.exceptions.Timeout:
+        print("❌ درخواست Timeline timeout شد")
+        return
+    except requests.exceptions.RequestException as e:
+        print(f"❌ خطا در ارتباط با سرور: {e}")
+        return
     
     print(f"📊 خلاصه Timeline:")
     print(f"   👤 بیمار: {timeline['patient']['full_name']}")
@@ -118,18 +168,37 @@ def main():
     
     # 6️⃣ Export کامل
     print("\n6️⃣ Export کامل اطلاعات...")
-    response = requests.get(f"{BASE_URL}/api/export/patient/{patient_id}/")
-    export_data = response.json()
-    
-    print(f"📦 Export شامل:")
-    print(f"   📋 Metadata: {export_data['export_metadata']}")
-    print(f"   🔄 تعداد نسخه‌ها: {len(export_data['versions'])}")
+    try:
+        response = requests.get(f"{BASE_URL}/api/export/patient/{patient_id}/", timeout=TIMEOUT)
+        if response.status_code != 200:
+            print(f"❌ خطا در Export: {response.status_code} -> {response.text}")
+            return
+        export_data = response.json()
+        
+        print(f"📦 Export شامل:")
+        print(f"   📋 Metadata: {export_data['export_metadata']}")
+        print(f"   🔄 تعداد نسخه‌ها: {len(export_data['versions'])}")
+    except requests.exceptions.Timeout:
+        print("❌ درخواست Export timeout شد")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ خطا در ارتباط با سرور: {e}")
     
     # 7️⃣ مشاهده Versioning
     print("\n7️⃣ بررسی نسخه‌گذاری...")
-    response = requests.get(f"{BASE_URL}/api/versions/Patient/{patient_id}/")
-    versions = response.json()
-    print(f"📚 تعداد نسخه‌های Patient: {len(versions)}")
+    try:
+        response = requests.get(f"{BASE_URL}/api/versions/Patient/{patient_id}/", timeout=TIMEOUT)
+        if response.status_code != 200:
+            print(f"❌ خطا در دریافت نسخه‌ها: {response.status_code} -> {response.text}")
+            return
+        versions = response.json()
+        print(f"📚 تعداد نسخه‌های Patient: {len(versions)}")
+        if versions:
+            latest_version = versions[0]
+            print(f"   📝 آخرین نسخه: {latest_version['version']} در {latest_version['created_at']}")
+    except requests.exceptions.Timeout:
+        print("❌ درخواست نسخه‌ها timeout شد")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ خطا در ارتباط با سرور: {e}")
     
     print(f"\n🎉 تست کامل موفقیت‌آمیز!")
     print(f"🔗 لینک‌های مفید:")

@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+"""No server-rendered views here yet; DRF-only for now."""

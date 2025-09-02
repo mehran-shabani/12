@@ -7,8 +7,7 @@ from diab_labs.models import LabResult
 from diab_medications.models import MedicationOrder
 from ai_summarizer.models import AISummary
 from records_versioning.models import RecordVersion
-from django.core.serializers.json import DjangoJSONEncoder
-import json
+from django.utils import timezone
 
 def export_patient(request, pk):
     """Export کامل اطلاعات بیمار به فرمت JSON"""
@@ -89,7 +88,8 @@ def export_patient(request, pk):
                 } for v in versions
             ],
             "export_metadata": {
-                "export_date": json.dumps(patient.created_at, cls=DjangoJSONEncoder),
+                "export_date": timezone.now().isoformat(),
+                "patient_created_at": patient.created_at.isoformat(),
                 "total_encounters": encounters.count(),
                 "total_labs": labs.count(),
                 "total_medications": medications.count(),

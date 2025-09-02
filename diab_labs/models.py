@@ -12,5 +12,12 @@ class LabResult(models.Model):
     taken_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-taken_at']
+        indexes = [
+            models.Index(fields=['patient', 'taken_at']),
+            models.Index(fields=['test_name', 'taken_at']),
+        ]
+
     def __str__(self):
         return f"{self.test_name}: {self.value} {self.unit}"

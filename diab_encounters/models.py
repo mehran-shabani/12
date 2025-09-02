@@ -12,5 +12,11 @@ class Encounter(models.Model):
     plan = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-occurred_at']
+        indexes = [
+            models.Index(fields=['patient', 'occurred_at']),
+        ]
+
     def __str__(self):
         return f"Encounter {self.id} for {self.patient.full_name}"
